@@ -1,4 +1,4 @@
-# ms_excel_deduplicator_compare_thresholds.py
+# import libraries
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,31 +9,24 @@ from collections import defaultdict, Counter
 from datetime import datetime
 import math
 
-# Try to import fuzzywuzzy for comparison (option C). If not present, skip that part.
+# Try to import fuzzywuzzy for comparison If not present, skip that part.
 try:
     from fuzzywuzzy import fuzz as fw_fuzz
     FUZZYWUZZY_AVAILABLE = True
 except Exception:
-    FW_WARNING = "fuzzywuzzy not available — comparison with fuzzywuzzy skipped. To enable install `fuzzywuzzy` (and optionally `python-levenshtein`)."
+    FW_WARNING = "fuzzywuzzy not available — comparison with fuzzywuzzy skipped. To enable install `fuzzywuzzy` (`python-levenshtein`)."
     FUZZYWUZZY_AVAILABLE = False
 
-# -------------------------
 # Page config & styling
-# -------------------------
-st.set_page_config(page_title="MS Excel Deduplicator (Threshold Compare)", layout="wide", initial_sidebar_state="auto")
+
+st.set_page_config(page_title="MS Excel Deduplicator (85% 90% 95% Thresholds)", layout="wide", initial_sidebar_state="auto")
 st.markdown(
     """
     <style>
-      body { background-color: #EAD7FF; } /* light purple */
+      body { background-color: #E4A0F7; } /* lavender */
       .title { text-align:center; font-size:34px; font-weight:800; margin-bottom:4px; color:#2e0854; }
       .subtitle { text-align:center; font-size:14px; margin-top:0px; color:#4b0f6f; }
       .developer { position: fixed; right: 14px; bottom: 10px; font-style: italic; color:#2e0854; }
-      .section { background: #ffffff; padding:14px; border-radius:10px; margin-bottom:14px; border:1px solid #d8bff5; box-shadow: 0 2px 6px rgba(75,0,130,0.06); }
-      .small { font-size:12px; color:#333; }
-      .danger { border-left:4px solid #ff4d4d; padding-left:10px; background:#fff0f0; border-radius:6px; }
-      .center { display:flex; justify-content:center; align-items:center; }
-      .imgrow { display:flex; gap:12px; justify-content:center; margin-bottom:8px; }
-      .footer-space { height:60px; }
       .stButton>button, .stDownloadButton>button { background-color: #4B0082; color: white; font-weight:700; border-radius:8px; }
       .progress-label { font-weight:700; color:#30204a; }
       table.data { border-collapse: collapse; width: 100%; }
@@ -43,18 +36,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown('<div class="title">MS Excel Deduplicator — Threshold Comparison</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Exact & Fuzzy deduplication with 85%, 90%, 95% runs (RapidFuzz; optional fuzzywuzzy comparison)</div>', unsafe_allow_html=True)
+st.markdown('<div class="title">MS EXCEL DEDUPLICATOR</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Exact & Fuzzy deduplication with 85%, 90%, 95% thresholds runs (RapidFuzz; fuzzywuzzy comparison)</div>', unsafe_allow_html=True)
 
 if not FUZZYWUZZY_AVAILABLE:
-    st.warning("Note: fuzzywuzzy not installed — fuzzywuzzy-based comparison rows will be skipped. Install fuzzywuzzy for full Option C behaviour.")
+    st.warning("Note: fuzzywuzzy not installed — fuzzywuzzy-based comparison rows will be skipped. Install fuzzywuzzy.")
 
 
 st.markdown("<div class='section'>", unsafe_allow_html=True)
 
-# -------------------------
 # Helpers
-# -------------------------
+
 def now_ts():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -217,7 +209,7 @@ def cluster_from_pairs_list(pairs):
     clusters_list.sort(key=lambda x: -len(x))
     return clusters_list
 
-# Merge rules: keep first name and first phone, aggregate others
+# Merge rules: keep details of first farmer, aggregate others
 def is_date_like(series):
     try:
         if series.dropna().empty:
@@ -279,9 +271,8 @@ def merge_groups_with_progress_keep_first(df, groups, id_cols=None, phone_cols=N
     elapsed = round(time.time() - start, 2)
     return df_new, len(all_idx), elapsed
 
-# -------------------------
 # Session state init
-# -------------------------
+
 for key in [
     "step","df_raw","df",
     "exact_groups","exact_detect_time","exact_merge_time","exact_removed",
@@ -296,7 +287,7 @@ if st.session_state.step is None:
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### 🔍 Audit Log")
+    st.markdown("### 🔍Audit Log")
     if st.session_state.audit_log:
         for a in st.session_state.audit_log[:100]:
             st.write(f"- {a}")
@@ -323,9 +314,8 @@ with st.sidebar:
 # Navigation buttons later at bottom
 st.markdown("---")
 
-# -------------------------
 # Step 1: Upload
-# -------------------------
+
 if st.session_state.step == 1:
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Step 1 — Upload dataset (CSV / Excel)")
@@ -414,17 +404,17 @@ elif st.session_state.step == 3:
 
         if st.session_state.exact_groups:
             st.markdown("<div class='danger'>", unsafe_allow_html=True)
-            st.write("⚠️ You are about to MERGE & DELETE exact duplicate groups.")
-            if st.button("Proceed to confirm exact merge"):
+            st.write("WARNING!!!⚠️You are about to MERGE & DELETE exact duplicates.")
+            if st.button("Proceed"):
                 st.session_state.show_exact_confirm = True
-            if st.button("Cancel exact merge"):
+            if st.button("Cancel"):
                 st.session_state.show_exact_confirm = False
             st.markdown("</div>", unsafe_allow_html=True)
             if st.session_state.get("show_exact_confirm", False):
-                st.warning("FINAL: Confirm merge & delete exact duplicates? Undo available in sidebar.")
+                st.warning("Confirm merge & delete exact duplicates.")
                 yes_col, no_col = st.columns([1,1])
                 with yes_col:
-                    if st.button("Yes — Merge & Delete exact now"):
+                    if st.button("Yes"):
                         st.session_state.last_snapshot = st.session_state.df.copy()
                         name_cols = [c for c in df.columns if "name" in c.lower()]
                         phone_candidates = [c for c in df.columns if any(p in c.lower() for p in ["phone","mobile","contact","tel"])]
