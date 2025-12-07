@@ -1,0 +1,6 @@
+streamlit
+pandas
+openpyxl
+rapidfuzz
+python-Levenshtein
+soundex
