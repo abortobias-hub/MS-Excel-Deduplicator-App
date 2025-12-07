@@ -4,3 +4,4 @@ openpyxl
 rapidfuzz
 python-Levenshtein
 soundex
+fuzzywuzzy
